@@ -1,26 +1,30 @@
-import streamlit as st
+from flask import Flask, render_template, request
 from rag_utils import load_pdf, split_documents, create_vector_db, answer_query
+import os
 
-st.title("📄 Invoice RAG Assistant")
+app = Flask(__name__)
 
-uploaded_file = st.file_uploader("Upload Invoice PDF", type="pdf")
+# Home page
+@app.route("/", methods=["GET", "POST"])
+def index():
+    answer, sources = None, []
+    if request.method == "POST":
+        pdf_file = request.files.get("pdf")
+        query = request.form.get("query")
 
-if uploaded_file:
-    with open("temp.pdf", "wb") as f:
-        f.write(uploaded_file.read())
+        if pdf_file:
+            pdf_path = "uploaded_invoice.pdf"
+            pdf_file.save(pdf_path)
 
-    docs = load_pdf("temp.pdf")
-    split_docs = split_documents(docs)
-    db = create_vector_db(split_docs)
+            docs = load_pdf(pdf_path)
+            split_docs = split_documents(docs)
+            db = create_vector_db(split_docs)
 
-    query = st.text_input("Ask a question:")
+            if query:
+                answer, source_docs = answer_query(db, query)
+                sources = [doc.page_content[:300] for doc in source_docs[:2]]
 
-    if query:
-        answer, source_docs = answer_query(db, query)
+    return render_template("index.html", answer=answer, sources=sources)
 
-        st.subheader("🤖 Answer")
-        st.write(answer)
-
-        st.subheader("📌 Retrieved Context")
-        for doc in source_docs[:2]:
-            st.write(doc.page_content[:300])
+if __name__ == "__main__":
+    app.run(debug=True)
