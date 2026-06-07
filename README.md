@@ -78,7 +78,7 @@ Final Answer + Source Context
 | Embeddings | Google Generative AI Embeddings |
 | PDF Processing | PyPDF |
 | Environment Variables | python-dotenv |
-| User Interface | Streamlit (Optional) |
+| User Interface | Flask |
 
 ---
 
