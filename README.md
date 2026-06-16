@@ -96,7 +96,7 @@ Financial-Document-RAG-Assistant/
 ├── templates/
 │   └── index.html             # Main HTML template
 │
-├── uploads/                   # Uploaded financial documents
+├── uploads/                   # Uploaded financial documents(created automatically)
 │
 ├── .env                       # API key and environment configuration
 ├── app.py                     # Flask application entry point
