@@ -61,8 +61,6 @@ Final Answer + Source Context
 - 🚫 Hallucination-resistant responses
 - 📌 Source text displayed for transparency
 - ⚡ Fast semantic search using FAISS
-- 💻 Command Line Interface (CLI)
-- 🌐 Optional Streamlit Web Interface
 - 🛡️ Error handling for common failures
 
 ---
@@ -161,16 +159,10 @@ invoice.pdf
 
 ## ▶️ Running the Application
 
-### CLI Mode
+### Flask Web Interface
 
 ```bash
 python app.py
-```
-
-### Streamlit Web Interface
-
-```bash
-streamlit run app_ui.py
 ```
 
 ---
