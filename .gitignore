@@ -1,0 +1,24 @@
+# Virtual environments
+venv/
+.venv/
+
+# Environment variables
+.env
+
+# Upload folder
+uploads/
+
+# Ignore specific file
+list_models.py
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# VS Code
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
