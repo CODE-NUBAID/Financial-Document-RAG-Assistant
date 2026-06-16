@@ -85,15 +85,24 @@ Final Answer + Source Context
 ## 📂 Project Structure
 
 ```text
-invoice-rag-system/
+Financial-Document-RAG-Assistant/
 │
-├── app.py                # CLI application
-├── app_ui.py             # Streamlit UI (optional)
-├── rag_utils.py          # Core RAG pipeline logic
-├── invoice.pdf           # Sample invoice document
-├── requirements.txt      # Project dependencies
-├── .env                  # API key configuration
-└── README.md             # Project documentation
+├── static/
+│   ├── css/
+│   │   └── style.css          # Application styling
+│   └── js/
+│       └── app.js             # Frontend JavaScript functionality
+│
+├── templates/
+│   └── index.html             # Main HTML template
+│
+├── uploads/                   # Uploaded financial documents
+│
+├── .env                       # API key and environment configuration
+├── app.py                     # Flask application entry point
+├── rag_utils.py               # Core RAG pipeline logic
+├── requirements.txt           # Project dependencies
+└── README.md                  # Project documentation
 ```
 
 ---
