@@ -1,4 +1,4 @@
-# 📄 Invoice RAG Assistant
+# 📄 Financial-Document-RAG-Assistant
 
 > **AI-Powered Financial Document Question Answering using Retrieval-Augmented Generation (RAG)**
 
