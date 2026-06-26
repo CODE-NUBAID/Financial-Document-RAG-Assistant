@@ -1,0 +1,34 @@
+/* theme.css — animated background glow + dark mode toggle button */
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 20% 20%, var(--accent-lt) 0%, transparent 40%),
+    radial-gradient(circle at 80% 80%, var(--green-lt) 0%, transparent 40%);
+  opacity: 0.5;
+  animation: drift 18s ease-in-out infinite alternate;
+  transition: background 0.4s ease;
+}
+
+@keyframes drift {
+  0%   { transform: translate(0, 0) scale(1); }
+  50%  { transform: translate(2%, -2%) scale(1.05); }
+  100% { transform: translate(-2%, 2%) scale(1); }
+}
+
+/* Toggle button */
+.theme-toggle {
+  width: 38px; height: 38px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem;
+  transition: background 0.3s, border-color 0.3s, transform 0.2s;
+}
+.theme-toggle:hover { border-color: var(--accent); transform: scale(1.05); }
