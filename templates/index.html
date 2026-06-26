@@ -3,118 +3,103 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Financial Document RAG Assistant</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <title>InvoiceAI · RAG Assistant</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2222%22 fill=%22%231a1510%22/><text x=%2250%22 y=%2266%22 font-size=%2255%22 text-anchor=%22middle%22>🧾</text></svg>">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/upload.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/qa.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/extract.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
 </head>
-<body class="bg-[#030508] text-slate-300 min-h-screen flex flex-col antialiased overflow-x-hidden relative">
+<body>
+<div class="page-wrap">
 
-  <!-- Background Effects -->
-  <canvas id="neural-canvas" class="absolute inset-0 pointer-events-none z-0"></canvas>
-  <div class="grid-overlay"></div>
+ <header class="site-header">
+  <div class="logo">
+    <div class="logo-icon">🧾</div>
+    <span class="logo-text">Invoice<span>AI</span></span>
+  </div>
+  <div style="display:flex; align-items:center; gap:10px;">
+    <span class="header-tag">RAG · Gemini · FAISS</span>
+    <button class="theme-toggle" id="theme-toggle">🌙</button>
+  </div>
+</header>
 
-  <!-- Navbar -->
-  <nav class="sticky top-0 z-50 backdrop-blur-xl bg-[#030508]/60 border-b border-white/5 px-8 py-3.5">
-    <div class="max-w-[1600px] mx-auto flex justify-between items-center">
-      <div class="flex items-center space-x-3 flex-1 group cursor-pointer">
-        <div class="p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20 relative overflow-hidden">
-          <i class="fa-solid fa-vault text-indigo-400 text-lg relative z-10 animate-pulse"></i>
-        </div>
-        <div>
-          <span class="font-bold text-white tracking-tight text-lg block">FinDoc <span class="text-indigo-400 font-mono text-sm">RAG</span></span>
-          <span class="text-[10px] text-slate-500 uppercase">Intelligent Assistant</span>
-        </div>
-      </div>
+  <section class="hero">
+    <h1>Ask anything about<br><em>your invoices</em></h1>
+    <p>Upload one or more financial documents and get instant, cited answers grounded strictly in your documents — zero hallucination.</p>
+  </section>
 
-      <div class="hidden md:flex items-center space-x-8 flex-1 justify-center">
-        <button id="tab-chat" class="nav-link active text-sm font-medium text-white relative py-1">Console Chat</button>
-        <button id="tab-arch" class="nav-link text-sm font-medium text-slate-400 hover:text-indigo-400 relative py-1">System Architecture</button>
-      </div>
-
-      <div class="flex items-center justify-end space-x-6 flex-1">
-        <div id="status-badge" class="px-4 py-1.5 rounded-full bg-white/[0.02] border border-white/10 text-[11px] font-semibold text-slate-400 flex items-center tracking-wider shadow-inner">
-          <span class="w-2 h-2 rounded-full bg-amber-500 mr-2 animate-pulse"></span> STANDBY
-        </div>
-      </div>
+  <!-- Upload -->
+  <div class="card">
+    <div class="card-label">Step 1 — Upload Document(s)</div>
+    <div class="upload-zone" id="upload-zone">
+      <input type="file" id="pdf-input" accept="application/pdf" multiple>
+      <span class="upload-icon">📂</span>
+      <div class="upload-title">Drop one or more invoice PDFs here</div>
+      <div class="upload-sub">or click to browse · PDF only</div>
+      <div class="upload-filename" id="upload-filename"></div>
     </div>
-  </nav>
-
-  <!-- Main Layout -->
-  <main class="flex-1 max-w-[1600px] w-full mx-auto px-6 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8 relative z-10">
-
-    <!-- Upload Panel -->
-    <div class="lg:col-span-3 space-y-6 slide-in-left">
-      <div class="glass-card p-6 space-y-6">
-        <h3 class="text-xs font-bold text-indigo-400 uppercase tracking-[0.2em] flex items-center gap-2">
-          <i class="fa-solid fa-cloud-arrow-up text-[10px]"></i> Document Upload
-        </h3>
-        <p class="text-xs text-slate-500">Upload a financial PDF to vectorize its content.</p>
-
-        <label class="block cursor-pointer">
-          <input type="file" id="pdf-input" accept=".pdf" class="hidden" />
-          <div class="border-2 border-dashed border-white/10 rounded-2xl p-8 text-center backdrop-blur-sm">
-            <div id="upload-default" class="space-y-3">
-              <i class="fa-solid fa-fingerprint text-3xl text-slate-600"></i>
-              <p class="text-xs text-slate-400">Select Financial PDF</p>
-              <p class="text-[10px] text-slate-600">Max size: 10MB</p>
-            </div>
-            <div id="upload-loader" class="hidden flex flex-col items-center justify-center py-4">
-              <div class="radar-scan mb-4"><div class="circle"></div><div class="angle"></div></div>
-              <span class="text-[10px] font-bold text-indigo-400 animate-pulse">VECTORIZING...</span>
-            </div>
-          </div>
-        </label>
-
-        <div id="file-info-card" class="hidden p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/20 flex items-center space-x-3">
-          <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400">
-            <i class="fa-solid fa-circle-nodes text-sm animate-spin-slow"></i>
-          </div>
-          <div class="truncate flex-1">
-            <span id="info-filename" class="text-xs font-semibold text-slate-200 block truncate">invoice.pdf</span>
-            <span class="text-[9px] font-bold text-emerald-400 uppercase tracking-widest">Vector Store Ready</span>
-          </div>
-        </div>
-      </div>
+    <div class="upload-progress" id="upload-progress">
+      <div class="upload-progress-bar" id="upload-bar"></div>
     </div>
+    <div class="upload-status" id="upload-status"></div>
+    <div class="file-pills" id="file-pills"></div>
+    <button class="btn-extract" id="reset-btn" style="display:none; border-color:#c0392b; color:#c0392b;">🗑️ Delete Conversation & Documents</button>
+  </div>
 
-    <!-- Chat Panel -->
-    <div id="panel-chat-view" class="lg:col-span-9 flex flex-col glass-card overflow-hidden h-[calc(100vh-160px)] slide-in-right">
-      <div id="active-pulse-border" class="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-indigo-500 to-transparent transform -translate-x-full"></div>
+  <div class="doc-stats" id="doc-stats" style="display:none;"></div>
 
-      <div id="chat-container" class="flex-1 p-8 overflow-y-auto space-y-6 custom-scrollbar">
-        <div id="welcome-message" class="flex space-x-4 animate-fade-in">
-          <div class="w-8 h-8 rounded-lg bg-indigo-600/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
-            <i class="fa-solid fa-comment-dollar text-sm"></i>
-          </div>
-          <div class="max-w-2xl text-sm text-slate-400 bg-white/[0.01] border border-white/5 rounded-2xl p-4">
-            Welcome to the <b>Financial Document RAG Assistant</b>. Upload a PDF to start querying with grounded answers.
-          </div>
-        </div>
-      </div>
+  <!-- Structured extraction -->
+  <div class="card" id="extract-section" style="display:none;">
+    <div class="card-label">Structured Field Extraction</div>
+    <button class="btn-extract" id="extract-btn">🧩 Extract Structured Fields</button>
+    <div id="extract-area"></div>
+  </div>
 
-      <div id="thinking-indicator" class="hidden px-8 py-4 bg-white/[0.01] border-t border-white/5 flex items-center space-x-4">
-        <div class="relative w-6 h-6 flex items-center justify-center">
-          <div class="absolute inset-0 border-2 border-indigo-500/20 rounded-full"></div>
-          <div class="absolute inset-0 border-2 border-transparent border-t-indigo-400 rounded-full animate-spin"></div>
-          <i class="fa-solid fa-brain text-[10px] text-indigo-400 absolute"></i>
-        </div>
-        <div class="typing-indicator-dots"><span></span><span></span><span></span></div>
-      </div>
-
-      <div class="p-6 bg-white/[0.01] border-t border-white/5">
-        <form id="query-form" class="flex items-center space-x-4 bg-[#030508]/80 backdrop-blur-md border border-white/10 rounded-2xl p-2">
-          <input type="text" id="user-query" disabled placeholder="Upload a document to enable queries..." 
-            class="flex-1 bg-transparent px-4 text-sm text-slate-200 placeholder-slate-600 disabled:opacity-40">
-          <button id="submit-btn" disabled class="p-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl">
-            <i class="fa-solid fa-bolt text-sm"></i>
-          </button>
-        </form>
-      </div>
+  <!-- Q&A -->
+  <div class="card" id="qa-section" style="display:none;">
+    <div class="card-label">Step 2 — Ask a Question</div>
+    <div class="examples-label">Quick examples</div>
+    <div class="pills" id="pills"></div>
+    <div class="query-wrap">
+      <input class="query-input" id="query-input" type="text"
+             placeholder="e.g. What is the total amount due?" autocomplete="off">
+      <button class="btn-ask" id="ask-btn">
+        <span class="btn-text">Ask ↵</span>
+        <span class="spinner"></span>
+      </button>
     </div>
-  </main>
+  </div>
 
-  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  <div id="results-area"></div>
+
+  <div class="history-section" id="history-section" style="display:none;">
+    <div class="history-heading">Previous Questions</div>
+    <div id="history-list"></div>
+  </div>
+
+  <footer class="site-footer">
+    <span class="footer-txt"></span>
+    <div class="tech-stack">
+      <span class="tech-tag">Flask</span><span class="tech-tag">LangChain</span>
+      <span class="tech-tag">FAISS</span><span class="tech-tag">Gemini</span>
+    </div>
+  </footer>
+
+</div>
+<script src="{{ url_for('static', filename='js/utils.js') }}"></script>
+<script src="{{ url_for('static', filename='js/upload.js') }}"></script>
+<script src="{{ url_for('static', filename='js/qa.js') }}"></script>
+<script src="{{ url_for('static', filename='js/extract.js') }}"></script>
+<script src="{{ url_for('static', filename='js/reset.js') }}"></script>
+<script>
+  document.getElementById("upload-zone").addEventListener("drop", () => {
+    document.getElementById("extract-section").style.display = "block";
+  });
+  document.getElementById("pdf-input").addEventListener("change", () => {
+    document.getElementById("extract-section").style.display = "block";
+  });
+</script>
 </body>
 </html>
