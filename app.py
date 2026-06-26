@@ -19,19 +19,15 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 # Per-session in-memory state: db, file list, and raw text for extraction
 sessions: dict = {}
 
-
 def _key(req):
     return req.cookies.get("session", "default")
-
 
 def _get_session(req):
     return sessions.setdefault(_key(req), {"db": None, "files": [], "all_text": ""})
 
-
 @app.route("/")
 def index():
     return render_template("index.html")
-
 
 @app.route("/upload", methods=["POST"])
 @limiter.limit("10 per hour")
@@ -64,7 +60,6 @@ def upload():
         "all_files": state["files"],
     })
 
-
 @app.route("/ask", methods=["POST"])
 @limiter.limit("15 per hour")
 
@@ -72,18 +67,15 @@ def ask():
     data = request.get_json() or {}
     query = data.get("query", "").strip()
     state = _get_session(request)
-
     if not query:
         return jsonify({"error": "Query cannot be empty."}), 400
     if not state["db"]:
         return jsonify({"error": "No document indexed. Upload a PDF first."}), 400
-
     try:
         result = answer_query(state["db"], query)
         return jsonify(result)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 @app.route("/extract", methods=["POST"])
 def extract():
@@ -105,6 +97,6 @@ def reset():
     sessions.pop(key, None)
     return jsonify({"success": True})
 
-
 if __name__ == "__main__":
     app.run(debug=True)
+    
