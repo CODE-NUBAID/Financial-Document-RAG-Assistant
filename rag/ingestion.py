@@ -1,7 +1,5 @@
 """ingestion.py — Load PDFs, attach source metadata, build FAISS index.
-
-Supports multiple PDFs in one vector store. Each chunk keeps track of
-which file and page it came from, so answers can cite their source.
+Supports multiple PDFs in one vector store. Each chunk keeps track of which file and page it came from, so answers can cite their source.
 """
 
 import os
@@ -16,12 +14,10 @@ API_KEY = os.getenv("GOOGLE_API_KEY")
 if not API_KEY:
     raise EnvironmentError("GOOGLE_API_KEY not found in .env")
 
-
 def load_pdf(path: str, source_name: str = None):
     """Load a single PDF. Tags every page with its filename for citations."""
     if not os.path.exists(path):
         raise FileNotFoundError(f"PDF not found: {path}")
-
     docs = PyPDFLoader(path).load()
     label = source_name or os.path.basename(path)
     for d in docs:
@@ -30,12 +26,10 @@ def load_pdf(path: str, source_name: str = None):
         d.metadata["page_display"] = d.metadata.get("page", 0) + 1
     return docs
 
-
 def split_documents(docs):
     """Split into overlapping chunks, preserving source/page metadata."""
     splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
     return splitter.split_documents(docs)
-
 
 def build_vector_db(chunks):
     """Embed chunks and store in a fresh FAISS index."""
@@ -44,7 +38,6 @@ def build_vector_db(chunks):
         google_api_key=API_KEY,
     )
     return FAISS.from_documents(chunks, embeddings)
-
 
 def add_documents(db, chunks):
     """Add more chunks to an existing FAISS index (multi-PDF support)."""
@@ -55,7 +48,6 @@ def add_documents(db, chunks):
     new_db = FAISS.from_documents(chunks, embeddings)
     db.merge_from(new_db)
     return db
-
 
 def chunk_stats(chunks):
     """Quick stats used in the UI — shows retrieval engineering awareness."""
