@@ -1,107 +1,110 @@
-from flask import Flask, render_template, request, jsonify
-from rag_utils import (
-    load_pdf,
-    split_documents,
-    create_vector_db,
-    answer_query
-)
+"""app.py — Flask entry point: upload, ask, and extract routes."""
 
 import os
+from flask import Flask, render_template, request, jsonify
+from werkzeug.utils import secure_filename
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from rag.ingestion import load_pdf, split_documents, build_vector_db, add_documents, chunk_stats
+from rag.retrieval import answer_query
+from rag.extraction import extract_invoice_fields
 
 app = Flask(__name__)
+app.secret_key = os.urandom(24)
+limiter = Limiter(get_remote_address, app=app, default_limits=["50 per hour"])
 
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-db = None
+# Per-session in-memory state: db, file list, and raw text for extraction
+sessions: dict = {}
+
+
+def _key(req):
+    return req.cookies.get("session", "default")
+
+
+def _get_session(req):
+    return sessions.setdefault(_key(req), {"db": None, "files": [], "all_text": ""})
 
 
 @app.route("/")
-def home():
+def index():
     return render_template("index.html")
 
 
 @app.route("/upload", methods=["POST"])
-def upload_pdf():
-
-    global db
-
+@limiter.limit("10 per hour")
+def upload():
     file = request.files.get("pdf")
+    if not file or not file.filename.endswith(".pdf"):
+        return jsonify({"error": "Please upload a valid PDF."}), 400
 
-    if not file:
-        return jsonify({
-            "success": False,
-            "message": "No file uploaded"
-        })
+    path = os.path.join(UPLOAD_FOLDER, secure_filename(file.filename))
+    file.save(path)
+    state = _get_session(request)
 
-    pdf_path = os.path.join(
-        UPLOAD_FOLDER,
-        file.filename
-    )
+    try:
+        docs = load_pdf(path, source_name=file.filename)
+        chunks = split_documents(docs)
+        state["db"] = add_documents(state["db"], chunks) if state["db"] else build_vector_db(chunks)
+        state["files"].append(file.filename)
+        state["all_text"] += "\n".join(d.page_content for d in docs) + "\n"
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-    file.save(pdf_path)
-
-    docs = load_pdf(pdf_path)
-
-    split_docs = split_documents(docs)
-
-    db = create_vector_db(split_docs)
-
+    stats = chunk_stats(chunks)
     return jsonify({
         "success": True,
-        "message": "Document processed successfully"
+        "doc_name": file.filename,
+        "pages": len(docs),
+        "chunks": stats["count"],
+        "avg_chunk_size": stats["avg_size"],
+        "total_files": len(state["files"]),
+        "all_files": state["files"],
     })
 
 
 @app.route("/ask", methods=["POST"])
-def ask_question():
+@limiter.limit("15 per hour")
 
-    global db
-
-    if db is None:
-        return jsonify({
-            "answer": "Please upload a document first.",
-            "sources": []
-        })
-
-    data = request.get_json()
-
-    query = data.get("question")
+def ask():
+    data = request.get_json() or {}
+    query = data.get("query", "").strip()
+    state = _get_session(request)
 
     if not query:
-        return jsonify({
-            "answer": "Please enter a question.",
-            "sources": []
-        })
+        return jsonify({"error": "Query cannot be empty."}), 400
+    if not state["db"]:
+        return jsonify({"error": "No document indexed. Upload a PDF first."}), 400
 
     try:
-
-        answer, source_docs = answer_query(
-            db,
-            query
-        )
-
-        sources = [
-            doc.page_content[:400]
-            for doc in source_docs[:3]
-        ]
-
-        return jsonify({
-            "answer": answer,
-            "sources": sources
-        })
-
+        result = answer_query(state["db"], query)
+        return jsonify(result)
     except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-        return jsonify({
-            "answer": f"Error: {str(e)}",
-            "sources": []
-        })
+
+@app.route("/extract", methods=["POST"])
+def extract():
+    """Structured field extraction — returns invoice data as JSON."""
+    state = _get_session(request)
+    if not state["all_text"]:
+        return jsonify({"error": "No document indexed. Upload a PDF first."}), 400
+
+    try:
+        fields = extract_invoice_fields(state["all_text"])
+        return jsonify(fields)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+@app.route("/reset", methods=["POST"])
+def reset():
+    """Clear this session's uploaded documents, index, and extracted text."""
+    key = _key(request)
+    sessions.pop(key, None)
+    return jsonify({"success": True})
 
 
 if __name__ == "__main__":
-    app.run(
-        debug=True,
-        host="0.0.0.0",
-        port=5000
-    )
+    app.run(debug=True)
