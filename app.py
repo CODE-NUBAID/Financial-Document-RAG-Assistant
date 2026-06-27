@@ -20,7 +20,9 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 sessions: dict = {}
 
 def _key(req):
-    return req.cookies.get("session", "default")
+    if "uid" not in session:
+        session["uid"] = uuid.uuid4().hex
+    return session["uid"]
 
 def _get_session(req):
     return sessions.setdefault(_key(req), {"db": None, "files": [], "all_text": ""})
