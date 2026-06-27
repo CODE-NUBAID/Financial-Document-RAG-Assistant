@@ -1,183 +1,221 @@
-# 📄 Financial-Document-RAG-Assistant
+# 🧾 InvoiceAI — Financial Document RAG Assistant
 
-> **AI-Powered Financial Document Question Answering using Retrieval-Augmented Generation (RAG)**
+> **A Retrieval-Augmented Generation system that answers questions about invoices — grounded strictly in the document, with citations, structured data extraction, and a real evaluation harness.**
 
-Transform static invoice PDFs into intelligent, searchable knowledge sources. Instead of manually scanning invoices, users can ask questions in natural language and receive accurate, context-aware answers grounded directly in the document.
+Upload one or more invoice PDFs and ask questions in plain language. Every answer is traceable back to the exact page and chunk it came from — no hallucination, no guessing.
 
 ---
 
 ## 🚀 Overview
 
-**Invoice RAG Assistant** is a Retrieval-Augmented Generation (RAG) application that enables users to interact with invoice PDFs through conversational queries.
+Most "ask your PDF" demos stop at a single document and a single free-text answer. InvoiceAI goes further:
 
-Simply upload an invoice and ask questions such as:
-
-- 💰 **What is the total amount?**
-- 📅 **What is the due date?**
-- 👤 **Who is the client?**
-- 🧾 **What is the invoice number?**
-
-The system retrieves the most relevant information from the invoice and generates responses strictly based on the document content, reducing hallucinations and improving reliability.
+- **Multiple invoices in one session** — ask cross-document questions, not just single-PDF Q&A
+- **Page-level citations** — every answer names the source file, page number, and a relevance score
+- **Structured field extraction** — a separate JSON-mode call pulls vendor, totals, dates, and invoice numbers into clean structured data, not just sentences
+- **A real evaluation harness** — measures retrieval accuracy and answer accuracy *separately*, plus latency, instead of one vague "it works" check
+- **Honest engineering** — relevance scores are labeled as retrieval heuristics, not fabricated confidence percentages; known limitations are documented, not hidden
 
 ---
 
-## 🧠 RAG Workflow
+## 🧠 RAG Pipeline
 
 ```text
-Invoice PDF
+PDF Upload(s)
      │
      ▼
-Text Extraction
+Page-Level Text Extraction (PyPDFLoader)
      │
      ▼
-Chunking
+Metadata Tagging (source file + page number)
      │
      ▼
-Embeddings Generation
+Chunking (500 chars, 100 overlap)
      │
      ▼
-FAISS Vector Database
+Embeddings (Gemini Embedding API)
+     │
+     ▼
+FAISS Vector Index (merge-able across multiple PDFs)
      │
      ▼
 User Query
      │
      ▼
-Relevant Context Retrieval
+Similarity Search → Top-K Chunks + Relevance Scores
+     │
+     ▼
+Anti-Hallucination Prompt (context + question)
      │
      ▼
 Gemini LLM
      │
      ▼
-Final Answer + Source Context
+Answer + Page Citations + Excerpts
+```
+
+A second, independent path handles structured extraction:
+
+```text
+Full Document Text → JSON-Schema Prompt → Gemini → Parsed JSON Fields
 ```
 
 ---
 
 ## ✨ Features
 
-- 📄 Upload and process invoice PDFs
-- 🔍 Ask questions in natural language
-- 🎯 Context-aware answers grounded in invoice data
-- 🚫 Hallucination-resistant responses
-- 📌 Source text displayed for transparency
-- ⚡ Fast semantic search using FAISS
-- 🛡️ Error handling for common failures
+| Feature | What it does |
+|---|---|
+| 📄 Multi-PDF upload | Merge multiple invoices into one searchable session via FAISS index merging |
+| 🎯 Grounded Q&A | Answers come only from retrieved document context — returns "Not found in document." otherwise |
+| 📌 Page citations | Every answer shows which file, which page, and a relevance score per supporting chunk |
+| 🧩 Structured extraction | One-click JSON extraction of vendor, client, invoice number, dates, total, currency |
+| 🌗 Dark/light mode | Toggle with persisted preference, defaults to dark, with an animated background |
+| 🗑️ Session reset | One button clears the uploaded documents, FAISS index, and Q&A history |
+| 💾 Persistent chat history | Saved in browser localStorage — survives a page refresh |
+| 📊 Evaluation harness | Standalone script measuring retrieval hit rate, answer accuracy, and latency |
+| 🛡️ Rate limiting | Per-IP request limits protect the shared API key from being exhausted by one visitor |
 
 ---
 
 ## 🛠️ Tech Stack
 
 | Category | Technology |
-|-----------|------------|
-| Programming Language | Python |
+|---|---|
+| Language | Python |
+| Web Framework | Flask |
 | RAG Framework | LangChain |
 | Vector Database | FAISS |
-| LLM | Gemini (Google Generative AI) |
-| Embeddings | Google Generative AI Embeddings |
+| LLM | Gemini 2.5 Flash (Google Generative AI) |
+| Embeddings | Gemini Embedding API |
 | PDF Processing | PyPDF |
-| Environment Variables | python-dotenv |
-| User Interface | Flask |
+| Frontend | Vanilla HTML/CSS/JS (no framework) |
+| Rate Limiting | Flask-Limiter |
+| Environment Config | python-dotenv |
+
+No databases, no Docker, no containerization — FAISS runs in-memory per session, intentionally kept simple for a single-instance deployment.
 
 ---
 
 ## 📂 Project Structure
 
 ```text
-Financial-Document-RAG-Assistant/
+invoice-ai/
+│
+├── app.py                  # Flask routes: upload, ask, extract, reset
+├── evaluation.py           # Standalone RAG evaluation harness
+│
+├── rag/
+│   ├── ingestion.py        # Load, chunk, embed, multi-PDF FAISS merging
+│   ├── retrieval.py        # Prompt engineering, retrieval, citations
+│   └── extraction.py       # Structured JSON field extraction
+│
+├── templates/
+│   └── index.html          # Single-page app structure
 │
 ├── static/
 │   ├── css/
-│   │   └── style.css          # Application styling
+│   │   ├── base.css        # Tokens, layout, header, footer
+│   │   ├── upload.css       # Upload zone, progress, stat badges
+│   │   ├── qa.css          # Query input, answer cards, history
+│   │   ├── extract.css     # Structured field cards, citations
+│   │   └── theme.css       # Dark mode + animated background
 │   └── js/
-│       └── app.js             # Frontend JavaScript functionality
+│       ├── utils.js        # Shared state, theme toggle
+│       ├── upload.js       # Multi-file drag-and-drop upload
+│       ├── qa.js           # Ask, render answers + citations, history
+│       ├── extract.js      # Structured field rendering
+│       └── reset.js        # Session + history clearing
 │
-├── templates/
-│   └── index.html             # Main HTML template
-│
-├── uploads/                   # Uploaded financial documents(created automatically)
-│
-├── .env                       # API key and environment configuration
-├── app.py                     # Flask application entry point
-├── rag_utils.py               # Core RAG pipeline logic
-├── requirements.txt           # Project dependencies
-└── README.md                  # Project documentation
+├── uploads/                 # Uploaded PDFs (created automatically)
+├── .env.example
+├── requirements.txt
+└── README.md
 ```
 
 ---
 
 ## ⚙️ Installation & Setup
 
-### 1. Clone the Repository
+### 1. Clone the repository
 
 ```bash
-git clone https://github.com/CODE-NUBAID/Financial-Document-RAG-Assistant
+git clone https://github.com/<your-username>/invoice-ai
+cd invoice-ai
 ```
 
-### 2. Create a Virtual Environment
+### 2. Create a virtual environment
 
-#### Windows
-
+**Windows**
 ```bash
 python -m venv venv
 venv\Scripts\activate
 ```
 
-#### Linux / macOS
-
+**Linux / macOS**
 ```bash
 python3 -m venv venv
 source venv/bin/activate
 ```
 
-### 3. Install Dependencies
+### 3. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. Configure Gemini API Key
+### 4. Configure your Gemini API key
 
-Create a `.env` file in the project root:
+```bash
+cp .env.example .env
+```
 
+Edit `.env`:
 ```env
 GOOGLE_API_KEY=your_api_key_here
 ```
 
-Get your API key from:
+Get a free key at [aistudio.google.com](https://aistudio.google.com/).
 
-https://aistudio.google.com/
-
-### 5. Add an Invoice PDF
-
-Place your invoice file in the root directory:
-
-```text
-invoice.pdf
-```
-
----
-
-## ▶️ Running the Application
-
-### Flask Web Interface
+### 5. Run it
 
 ```bash
 python app.py
 ```
 
+Visit `http://127.0.0.1:5000`.
+
+---
+
+## 🧪 Running the Evaluation Harness
+
+```bash
+python evaluation.py uploads/your_invoice.pdf
+```
+
+This measures three separate things, not one pass/fail number:
+
+```text
+Retrieval Hit Rate : did FAISS retrieve the chunk containing the right answer?
+Answer Accuracy    : did the final LLM answer contain the correct value?
+Avg Latency        : how long retrieval + generation took, per question
+```
+
+> **Important:** the test cases in `evaluation.py` contain placeholder expected values. Before running it on your own invoice, open the PDF and update `TEST_CASES` with the real vendor name, invoice number, total, and due date from *that specific document*. An evaluation script is only as honest as its ground truth — this is a deliberate design choice, not an oversight.
+
+A detailed JSON report is saved to `eval_report.json` after each run.
+
 ---
 
 ## 💬 Example Queries
 
-Try asking:
-
 ```text
 What is the invoice number?
-What is the total amount?
+What is the total amount due?
+Who is the vendor?
 What is the due date?
-Who is the client?
-What services were billed?
-When was the invoice issued?
+List all line items.
+What are the payment terms?
 ```
 
 ---
@@ -185,33 +223,18 @@ When was the invoice issued?
 ## 📌 Example Response
 
 ```text
-Question:
-What is the total amount?
+Question: What is the total amount due?
 
-Answer:
-The total amount is ₹15,000.
+Answer: The total amount due is ₹1,91,129.90.
 
-Source:
-"Total Amount: ₹15,000"
+Citation:
+  File: invoice.pdf · Page 1 · Relevance: 87%
+  Excerpt: "TOTAL DUE: ₹1,91,129.90"
 ```
 
----
-
-## ⚠️ Error Handling
-
-The application gracefully handles:
-
-- ❌ Missing API key
-- ❌ Missing PDF file
-- ❌ Invalid document format
-- ❌ Empty user queries
-- ❌ No relevant context found
-- ❌ API request failures
-
-If information is not available in the document, the system returns:
-
+If the answer isn't in the document:
 ```text
-Not found in document.
+Answer: Not found in document.
 ```
 
 ---
@@ -219,40 +242,67 @@ Not found in document.
 ## 🧩 Core Components
 
 | Component | Purpose |
-|------------|----------|
-| PyPDFLoader | Extracts text from PDF invoices |
-| Text Splitter | Divides text into manageable chunks |
-| Embeddings Model | Converts text into vector representations |
-| FAISS | Stores and retrieves document embeddings |
-| Retriever | Finds the most relevant chunks for a query |
-| Gemini LLM | Generates answers using retrieved context |
+|---|---|
+| `PyPDFLoader` | Extracts page-level text and attaches source metadata |
+| `RecursiveCharacterTextSplitter` | Splits text into overlapping chunks, preserving metadata |
+| `GoogleGenerativeAIEmbeddings` | Converts text chunks into vectors |
+| `FAISS` | Stores vectors, supports merging multiple documents into one index |
+| `retrieve_chunks()` | Similarity search + relevance scoring |
+| `answer_query()` | Builds the grounded prompt, calls Gemini, attaches citations |
+| `extract_invoice_fields()` | Separate structured-output call returning strict JSON |
+| `evaluation.py` | Measures retrieval and answer accuracy independently |
 
 ---
 
-## 🎯 Key Learning Outcomes
+## ⚠️ Error Handling
 
-This project demonstrates:
+The application handles:
 
-- Retrieval-Augmented Generation (RAG)
-- Semantic Search and Vector Databases
-- Document Question Answering Systems
-- LangChain Integration
-- FAISS Vector Store Usage
-- Gemini API Integration
-- Prompt Engineering Techniques
-- Building AI-Powered Business Applications
+- ❌ Missing or invalid API key
+- ❌ Missing or non-PDF file uploads
+- ❌ Empty user queries
+- ❌ No relevant context retrieved
+- ❌ Malformed JSON from structured extraction (parsed defensively, fails gracefully)
+- ❌ Gemini API rate limits (429) — mitigated with per-IP rate limiting so one visitor can't exhaust the shared quota for everyone
+
+---
+
+## 🎯 Key Engineering Decisions (and why)
+
+- **Relevance score, not "confidence"** — the UI shows a retrieval relevance percentage derived from FAISS distance. It is explicitly *not* presented as a calibrated probability, because it isn't one. Honesty about what a metric actually measures matters more than a more impressive-looking number.
+- **Two separate LLM call patterns** — free-text grounded Q&A (RAG) and structured JSON extraction are implemented as two distinct code paths, because they're solving two different problems with two different prompting strategies.
+- **In-memory session state** — no database is used; each visitor's FAISS index and document state live in a server-side dictionary. This is a deliberate simplicity tradeoff for a single-instance portfolio deployment, not a production-scale design, and is documented here rather than hidden.
+- **Evaluation measures two failure modes separately** — a wrong final answer can mean either "retrieval found the wrong chunk" or "retrieval was right but the LLM misread it." Measuring `retrieval_hit` and `answer_correct` independently makes it possible to tell which failure actually occurred.
+
+---
+
+## 🔒 Known Limitations
+
+- No persistent database — FAISS indexes reset on server restart
+- No authentication or multi-tenant isolation beyond per-session cookies
+- Relevance scoring is a heuristic, not a calibrated confidence metric
+- Evaluation test cases must be manually written per document — there is no automated ground-truth generation
 
 ---
 
 ## 🔮 Future Enhancements
 
-- 📊 Multi-invoice support
-- 🧾 Structured invoice extraction (JSON format)
-- 🔗 n8n workflow integration
-- 📈 Analytics dashboard
-- 🤖 Automatic document classification
-- 📤 Bulk invoice processing
-- 🌍 Multi-language support
-- 🏢 Vendor and customer insights
+- OCR support for scanned (non-text) invoices
+- Multi-invoice comparison ("which invoice has the highest amount?")
+- Automated test-case generation from document content
+- Persistent storage layer for session state across restarts
+- Bring-your-own-API-key support for public deployments
+
+---
+
+## 📚 What This Project Demonstrates
+
+- Retrieval-Augmented Generation (RAG) architecture end-to-end
+- Prompt engineering for hallucination prevention with a defined fallback behavior
+- Vector embeddings and FAISS similarity search, including incremental index merging
+- Structured output / JSON-mode prompting as a distinct pattern from free-text generation
+- RAG evaluation methodology — separating retrieval accuracy from generation accuracy
+- Flask API design with session-scoped state and per-IP rate limiting
+- Frontend engineering without a framework — modular CSS/JS, dark mode via CSS variables, localStorage-backed state
 
 ---
