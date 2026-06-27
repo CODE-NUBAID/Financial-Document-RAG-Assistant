@@ -1,7 +1,7 @@
 """app.py — Flask entry point: upload, ask, and extract routes."""
 
 import os
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, session
 from werkzeug.utils import secure_filename
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
