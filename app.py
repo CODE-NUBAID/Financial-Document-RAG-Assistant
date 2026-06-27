@@ -16,7 +16,6 @@ limiter = Limiter(get_remote_address, app=app, default_limits=["50 per hour"])
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# Per-session in-memory state: db, file list, and raw text for extraction
 sessions: dict = {}
 
 def _key(req):
