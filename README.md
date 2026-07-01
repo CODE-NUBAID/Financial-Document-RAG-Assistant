@@ -1,5 +1,26 @@
 # 🧾 InvoiceAI — Financial Document RAG Assistant
 
+<p align="left">
+  <a href="https://www.python.org/">
+    <img src="https://img.shields.io/badge/Python-3.9+-3776AB?style=flat&logo=python&logoColor=white" alt="Python">
+  </a>
+  <a href="https://flask.palletsprojects.com/">
+    <img src="https://img.shields.io/badge/Flask-2.0+-000000?style=flat&logo=flask&logoColor=white" alt="Flask">
+  </a>
+  <a href="https://ai.google.dev/">
+    <img src="https://img.shields.io/badge/Google_Gemini-2.5_Flash-4285F4?style=flat&logo=google&logoColor=white" alt="Gemini">
+  </a>
+  <a href="https://python.langchain.com/">
+    <img src="https://img.shields.io/badge/LangChain-RAG-1C3C3C?style=flat&logo=chainlink&logoColor=white" alt="LangChain">
+  </a>
+  <a href="https://faiss.ai/">
+    <img src="https://img.shields.io/badge/FAISS-Vector_DB-00979D?style=flat" alt="FAISS">
+  </a>
+  <a href="https://pypi.org/project/pypdf/">
+    <img src="https://img.shields.io/badge/PyPDF-PDF_Processing-CC342D?style=flat" alt="PyPDF">
+  </a>
+</p>
+
 > **A Retrieval-Augmented Generation system that answers questions about invoices — grounded strictly in the document, with citations, structured data extraction, and a real evaluation harness.**
 
 Upload one or more invoice PDFs and ask questions in plain language. Every answer is traceable back to the exact page and chunk it came from — no hallucination, no guessing.
