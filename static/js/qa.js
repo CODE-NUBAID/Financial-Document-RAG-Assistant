@@ -57,7 +57,7 @@ function renderAnswer(query, answer, citations) {
   addHistory(query, answer);
 }
 
-// ── History (persisted in localStorage) ─────────────────────────────────────────
+// ── History (persisted in localStorage)
 function addHistory(q, a) {
   qaHistory.unshift({ q, a, ts: new Date().toLocaleString() });
   if (qaHistory.length > 10) qaHistory.pop();
