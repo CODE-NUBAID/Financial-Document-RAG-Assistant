@@ -80,7 +80,7 @@ def run_evaluation(pdf_path: str):
 def _retrieval_hit(retrieved: list, expected: str) -> bool:
     """Expected text found in ANY retrieved chunk's raw content?"""
     if not expected or expected.lower() == "not found":
-        return True  # nothing to retrieve for the negative test case
+        return True
     combined = " ".join(r["doc"].page_content for r in retrieved).lower()
     return expected.lower() in combined
 
