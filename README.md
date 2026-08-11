@@ -110,7 +110,7 @@ Full Document Text → JSON-Schema Prompt → Gemini → Parsed JSON Fields
 | LLM | Gemini 2.5 Flash (Google Generative AI) |
 | Embeddings | Gemini Embedding API |
 | PDF Processing | PyPDF |
-| Frontend | Vanilla HTML/CSS/JS (no framework) |
+| Frontend | Vanilla HTML/CSS/JS |
 | Rate Limiting | Flask-Limiter |
 | Environment Config | python-dotenv |
 
