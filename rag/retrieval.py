@@ -33,7 +33,7 @@ def retrieve_chunks(db, query: str, k: int = 4):
     results = db.similarity_search_with_score(query, k=k)
     chunks = []
     for doc, distance in results:
-        relevance = max(0, round(100 - distance * 20))  # heuristic scaling
+        relevance = max(0, round(100 - distance * 20))  # scaling
         chunks.append({"doc": doc, "relevance": relevance})
     return chunks
 
