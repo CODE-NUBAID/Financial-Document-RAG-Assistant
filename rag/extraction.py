@@ -30,7 +30,7 @@ TEXT:
 def extract_invoice_fields(full_text: str) -> dict:
     """Call the LLM once with a JSON-only instruction and parse the result."""
     llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", google_api_key=API_KEY)
-    prompt = EXTRACTION_PROMPT.format(text=full_text[:6000])  # keep prompt small
+    prompt = EXTRACTION_PROMPT.format(text=full_text[:6000])
     raw = llm.invoke(prompt).content.strip()
     cleaned = _strip_code_fences(raw)
     try:
