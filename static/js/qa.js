@@ -33,7 +33,7 @@ async function askQuestion() {
   finally { askBtn.classList.remove("loading"); askBtn.disabled = false; }
 }
 
-// ── Render answer + citations ───────────────────────────────────────────────────
+// ── Render answer + citations
 function renderAnswer(query, answer, citations) {
   let html = `
     <div class="answer-card">
