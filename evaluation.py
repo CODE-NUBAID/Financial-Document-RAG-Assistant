@@ -16,7 +16,7 @@ from rag.retrieval import answer_query, retrieve_chunks
 Replace these with the REAL values from YOUR invoice — open the PDF
 and type the true answer. Without real values this only checks
 "did it answer," not "was the answer correct."
-
+"""
 
 TEST_CASES = [
     {"question": "What is the invoice number?",   "expect_contains": "POD-26-148579648 or IN-613"},
