@@ -1,9 +1,7 @@
 """evaluation.py — RAG eval harness: retrieval hit rate, answer accuracy, latency.
 
-Two separate failure modes are tracked: did FAISS retrieve the right
-chunk at all (retrieval_hit), and did the final LLM answer contain the
-right value (answer_correct). A wrong final answer with a retrieval hit
-means the LLM misread good context; a miss means retrieval itself failed.
+Two separate failure modes are tracked: did FAISS retrieve the right chunk at all (retrieval_hit), and did the final LLM answer contain the right value (answer_correct).
+A wrong final answer with a retrieval hit means the LLM misread good context; a miss means retrieval itself failed.
 
 Usage: python evaluation.py path/to/invoice.pdf
 """
