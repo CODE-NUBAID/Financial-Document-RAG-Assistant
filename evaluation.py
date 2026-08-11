@@ -12,7 +12,7 @@ import time
 from rag.ingestion import load_pdf, split_documents, build_vector_db
 from rag.retrieval import answer_query, retrieve_chunks
 
-
+"""
 Replace these with the REAL values from YOUR invoice — open the PDF
 and type the true answer. Without real values this only checks
 "did it answer," not "was the answer correct."
